@@ -1,0 +1,18 @@
+{
+  "name": "Invoice Builder",
+  "short_name": "Invoices",
+  "description": "Local-first invoicing for freelancers and small businesses",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f8f7f4",
+  "theme_color": "#2a5caa",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
