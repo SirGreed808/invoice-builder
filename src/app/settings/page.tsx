@@ -1,18 +1,19 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { Settings, Save, Trash2, AlertTriangle } from 'lucide-react'
 import { db, getSettings } from '@/lib/db'
-import type { Settings } from '@/types'
+import type { Settings as SettingsType } from '@/types'
 
 export default function SettingsPage() {
-  const [settings, setSettings] = useState<Settings | null>(null)
+  const [settings, setSettings] = useState<SettingsType | null>(null)
   const [saved, setSaved] = useState(false)
 
   useEffect(() => {
     getSettings().then(setSettings)
   }, [])
 
-  function update<K extends keyof Settings>(field: K, value: Settings[K]) {
+  function update<K extends keyof SettingsType>(field: K, value: SettingsType[K]) {
     if (!settings) return
     setSettings({ ...settings, [field]: value })
     setSaved(false)
@@ -41,37 +42,49 @@ export default function SettingsPage() {
           <h1 className="page-title">Settings</h1>
           <p className="page-subtitle">All data lives in this browser — install the app to use offline.</p>
         </div>
-        <div style={{ display: 'flex', gap: 8 }}>
-          {saved && <span style={{ alignSelf: 'center', color: 'var(--success)', fontSize: '0.85rem' }}>✓ Saved</span>}
-          <button className="btn btn-primary" onClick={save}>Save Settings</button>
+        <div style={{ display: 'flex', gap: 10 }}>
+          {saved && (
+            <span style={{ alignSelf: 'center', color: 'var(--success)', fontSize: '0.85rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4 }}>
+              ✓ Saved
+            </span>
+          )}
+          <button className="btn btn-primary" onClick={save}>
+            <Save size={16} strokeWidth={2} />
+            Save Settings
+          </button>
         </div>
       </div>
 
-      <div className="card" style={{ marginBottom: 16 }}>
-        <div className="card-header">Business Info</div>
+      <div className="card" style={{ marginBottom: 18 }}>
+        <div className="card-header">
+          <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <Settings size={17} strokeWidth={2} />
+            Business Info
+          </span>
+        </div>
         <div className="card-body">
           <div className="form-group">
             <label className="form-label">Business Name *</label>
-            <input className="form-input" value={settings.businessName} onChange={(e) => update('businessName', e.target.value)} />
+            <input className="form-input" value={settings.businessName} onChange={(e) => update('businessName', e.target.value)} maxLength={80} />
           </div>
           <div className="form-row">
             <div className="form-group">
               <label className="form-label">Email</label>
-              <input className="form-input" type="email" value={settings.businessEmail} onChange={(e) => update('businessEmail', e.target.value)} />
+              <input className="form-input" type="email" value={settings.businessEmail} onChange={(e) => update('businessEmail', e.target.value)} maxLength={254} />
             </div>
             <div className="form-group">
               <label className="form-label">Phone</label>
-              <input className="form-input" type="tel" value={settings.businessPhone} onChange={(e) => update('businessPhone', e.target.value)} />
+              <input className="form-input" type="tel" value={settings.businessPhone} onChange={(e) => update('businessPhone', e.target.value)} maxLength={20} />
             </div>
           </div>
           <div className="form-group">
             <label className="form-label">Address</label>
-            <textarea className="form-textarea" value={settings.businessAddress} onChange={(e) => update('businessAddress', e.target.value)} rows={3} />
+            <textarea className="form-textarea" value={settings.businessAddress} onChange={(e) => update('businessAddress', e.target.value)} rows={3} maxLength={500} />
           </div>
         </div>
       </div>
 
-      <div className="card" style={{ marginBottom: 16 }}>
+      <div className="card" style={{ marginBottom: 18 }}>
         <div className="card-header">Defaults</div>
         <div className="card-body">
           <div className="form-row-3">
@@ -93,22 +106,22 @@ export default function SettingsPage() {
         </div>
       </div>
 
-      <div className="card" style={{ marginBottom: 16 }}>
+      <div className="card" style={{ marginBottom: 18 }}>
         <div className="card-header">Numbering</div>
         <div className="card-body">
           <div className="form-row">
             <div className="form-group">
               <label className="form-label">Invoice Prefix</label>
-              <input className="form-input" value={settings.invoicePrefix} onChange={(e) => update('invoicePrefix', e.target.value)} />
-              <p style={{ fontSize: '0.78rem', color: 'var(--text-subtle)', marginTop: 4 }}>
-                Next: {settings.invoicePrefix}-{String(settings.nextInvoiceNumber).padStart(4, '0')}
+              <input className="form-input" value={settings.invoicePrefix} onChange={(e) => update('invoicePrefix', e.target.value)} maxLength={10} />
+              <p style={{ fontSize: '0.78rem', color: 'var(--text-subtle)', marginTop: 6 }}>
+                Next: <span style={{ fontFamily: 'var(--mono)', fontWeight: 600 }}>{settings.invoicePrefix}-{String(settings.nextInvoiceNumber).padStart(4, '0')}</span>
               </p>
             </div>
             <div className="form-group">
               <label className="form-label">Quote Prefix</label>
-              <input className="form-input" value={settings.quotePrefix} onChange={(e) => update('quotePrefix', e.target.value)} />
-              <p style={{ fontSize: '0.78rem', color: 'var(--text-subtle)', marginTop: 4 }}>
-                Next: {settings.quotePrefix}-{String(settings.nextQuoteNumber).padStart(4, '0')}
+              <input className="form-input" value={settings.quotePrefix} onChange={(e) => update('quotePrefix', e.target.value)} maxLength={10} />
+              <p style={{ fontSize: '0.78rem', color: 'var(--text-subtle)', marginTop: 6 }}>
+                Next: <span style={{ fontFamily: 'var(--mono)', fontWeight: 600 }}>{settings.quotePrefix}-{String(settings.nextQuoteNumber).padStart(4, '0')}</span>
               </p>
             </div>
           </div>
@@ -116,12 +129,18 @@ export default function SettingsPage() {
       </div>
 
       <div className="card">
-        <div className="card-header" style={{ color: 'var(--danger)' }}>Danger Zone</div>
+        <div className="card-header" style={{ color: 'var(--danger)', display: 'flex', alignItems: 'center', gap: 8 }}>
+          <AlertTriangle size={17} strokeWidth={2} />
+          Danger Zone
+        </div>
         <div className="card-body">
-          <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)', marginBottom: 12 }}>
+          <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)', marginBottom: 16 }}>
             Permanently delete all data stored in this browser. This cannot be undone.
           </p>
-          <button className="btn btn-danger" onClick={resetData}>Reset All Data</button>
+          <button className="btn btn-danger" onClick={resetData}>
+            <Trash2 size={16} strokeWidth={2} />
+            Reset All Data
+          </button>
         </div>
       </div>
     </>

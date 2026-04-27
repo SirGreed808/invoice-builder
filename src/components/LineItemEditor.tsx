@@ -2,6 +2,7 @@
 
 import type { LineItem } from '@/types'
 import { subtotal, taxAmount, total, formatCurrency } from '@/lib/calc'
+import { DEMO_LIMITS } from '@/lib/limits'
 
 interface Props {
   items: LineItem[]
@@ -18,6 +19,10 @@ export default function LineItemEditor({ items, taxRate, onChange }: Props) {
   }
 
   function addRow() {
+    if (items.length >= DEMO_LIMITS.MAX_LINE_ITEMS) {
+      alert(`Demo limit: ${DEMO_LIMITS.MAX_LINE_ITEMS} line items max.`)
+      return
+    }
     onChange([...items, blank()])
   }
 
@@ -48,6 +53,7 @@ export default function LineItemEditor({ items, taxRate, onChange }: Props) {
                     value={item.description}
                     onChange={(e) => update(i, 'description', e.target.value)}
                     placeholder="Item description"
+                    maxLength={200}
                   />
                 </td>
                 <td>
@@ -98,7 +104,7 @@ export default function LineItemEditor({ items, taxRate, onChange }: Props) {
       </div>
 
       <div style={{ marginTop: 10 }}>
-        <button type="button" className="btn btn-ghost btn-sm" onClick={addRow}>
+        <button type="button" className="btn btn-ghost btn-sm" onClick={addRow} disabled={items.length >= DEMO_LIMITS.MAX_LINE_ITEMS}>
           + Add line item
         </button>
       </div>

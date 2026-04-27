@@ -2,6 +2,17 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import {
+  TrendingUp,
+  AlertTriangle,
+  DollarSign,
+  Users,
+  FileText,
+  Quote,
+  ArrowRight,
+  RefreshCw,
+  Plus,
+} from 'lucide-react'
 import { db } from '@/lib/db'
 import { getDueRecurringInvoices, nextRecurringDate } from '@/lib/recurring'
 import { formatCurrency, formatDate, total } from '@/lib/calc'
@@ -12,8 +23,10 @@ export default function Dashboard() {
   const [invoices, setInvoices] = useState<Invoice[]>([])
   const [clients, setClients] = useState<Client[]>([])
   const [recurringDue, setRecurringDue] = useState<Invoice[]>([])
+  const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
+    setMounted(true)
     async function load() {
       const [invs, cls] = await Promise.all([db.invoices.toArray(), db.clients.toArray()])
       setInvoices(invs)
@@ -64,108 +77,263 @@ export default function Dashboard() {
     window.location.href = `/invoices/${newId}`
   }
 
+  const stats = [
+    {
+      label: 'Outstanding',
+      value: formatCurrency(outstanding),
+      icon: TrendingUp,
+      tone: outstanding > 0 ? 'warning' : 'neutral',
+    },
+    {
+      label: 'Overdue',
+      value: String(overdueCount),
+      icon: AlertTriangle,
+      tone: overdueCount > 0 ? 'danger' : 'neutral',
+    },
+    {
+      label: 'Revenue This Month',
+      value: formatCurrency(monthlyRevenue),
+      icon: DollarSign,
+      tone: 'success',
+    },
+    {
+      label: 'Total Clients',
+      value: String(clients.length),
+      icon: Users,
+      tone: 'neutral',
+    },
+  ]
+
   return (
     <>
-      <div className="page-header">
-        <div>
-          <h1 className="page-title">Overview</h1>
-          <p className="page-subtitle">
-            {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
-          </p>
-        </div>
-        <div style={{ display: 'flex', gap: 8 }}>
-          <Link href="/quotes/new" className="btn btn-ghost">New Quote</Link>
-          <Link href="/invoices/new" className="btn btn-primary">New Invoice</Link>
-        </div>
+      {/* Animated background shapes */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden" style={{ zIndex: 0 }}>
+        <div
+          className="blob-float"
+          style={{
+            position: 'absolute',
+            top: '-5%',
+            right: '-3%',
+            width: 320,
+            height: 320,
+            borderRadius: '50%',
+            background: 'linear-gradient(135deg, rgba(194, 102, 45, 0.1) 0%, rgba(232, 133, 74, 0.06) 100%)',
+            filter: 'blur(40px)',
+          }}
+        />
+        <div
+          className="blob-float"
+          style={{
+            position: 'absolute',
+            top: '15%',
+            left: '-5%',
+            width: 240,
+            height: 240,
+            borderRadius: '50%',
+            background: 'linear-gradient(135deg, rgba(42, 122, 114, 0.08) 0%, rgba(61, 155, 145, 0.05) 100%)',
+            filter: 'blur(50px)',
+            animationDelay: '-4s',
+          }}
+        />
+        <div
+          className="blob-float"
+          style={{
+            position: 'absolute',
+            bottom: '10%',
+            right: '5%',
+            width: 280,
+            height: 280,
+            borderRadius: '50%',
+            background: 'linear-gradient(135deg, rgba(194, 102, 45, 0.06) 0%, rgba(42, 122, 114, 0.08) 100%)',
+            filter: 'blur(60px)',
+            animationDelay: '-8s',
+          }}
+        />
+        <div
+          className="diamond-spin"
+          style={{
+            position: 'absolute',
+            top: '40%',
+            right: '8%',
+            width: 60,
+            height: 60,
+            borderRadius: 14,
+            background: 'rgba(194, 102, 45, 0.08)',
+          }}
+        />
+        <div
+          className="diamond-spin"
+          style={{
+            position: 'absolute',
+            bottom: '25%',
+            left: '3%',
+            width: 40,
+            height: 40,
+            borderRadius: 10,
+            background: 'rgba(42, 122, 114, 0.1)',
+            animationDelay: '-10s',
+          }}
+        />
       </div>
 
-      <div className="stat-grid">
-        <div className="stat-card">
-          <div className="stat-label">Outstanding</div>
-          <div className={`stat-value${outstanding > 0 ? ' warning' : ''}`}>{formatCurrency(outstanding)}</div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-label">Overdue</div>
-          <div className={`stat-value${overdueCount > 0 ? ' danger' : ''}`}>{overdueCount}</div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-label">Revenue This Month</div>
-          <div className="stat-value success">{formatCurrency(monthlyRevenue)}</div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-label">Total Clients</div>
-          <div className="stat-value">{clients.length}</div>
-        </div>
-      </div>
-
-      {recurringDue.length > 0 && (
-        <div style={{ marginBottom: 28 }}>
-          <div
-            className="card-header"
-            style={{ background: 'var(--warning-light)', borderRadius: 'var(--radius) var(--radius) 0 0' }}
-          >
-            🔁 Recurring invoices ready to send ({recurringDue.length})
+      {/* Page content */}
+      <div className="relative" style={{ zIndex: 1 }}>
+        <div className="page-header">
+          <div>
+            <h1 className="page-title">Overview</h1>
+            <p className="page-subtitle">
+              {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
+            </p>
           </div>
-          <div className="card" style={{ borderRadius: '0 0 var(--radius) var(--radius)' }}>
-            <div className="card-body" style={{ padding: '12px 16px' }}>
-              {recurringDue.map((inv) => (
-                <div className="recurring-item" key={inv.id}>
-                  <div className="recurring-item-info">
-                    <div className="recurring-item-title">{clientMap[inv.clientId]?.name ?? 'Unknown client'}</div>
-                    <div className="recurring-item-sub">
-                      {inv.number} · {inv.recurringFrequency} · due {formatDate(inv.recurringNextDate!)}
-                    </div>
-                  </div>
-                  <button className="btn btn-primary btn-sm" onClick={() => generateRecurring(inv)}>
-                    Generate
-                  </button>
-                </div>
-              ))}
-            </div>
+          <div style={{ display: 'flex', gap: 10 }}>
+            <Link href="/quotes/new" className="btn btn-ghost">
+              <Quote size={16} strokeWidth={2} />
+              New Quote
+            </Link>
+            <Link href="/invoices/new" className="btn btn-primary">
+              <Plus size={16} strokeWidth={2.5} />
+              New Invoice
+            </Link>
           </div>
         </div>
-      )}
 
-      <div className="card">
-        <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <span>Recent Invoices</span>
-          <Link href="/invoices" style={{ fontSize: '0.8rem', fontWeight: 400 }}>View all →</Link>
-        </div>
-        <div className="table-wrap">
-          {recent.length === 0 ? (
-            <div className="empty-state">
-              <div className="empty-state-title">No invoices yet</div>
-              <div className="empty-state-desc">Create your first invoice to get started.</div>
-              <Link href="/invoices/new" className="btn btn-primary">New Invoice</Link>
-            </div>
-          ) : (
-            <table>
-              <thead>
-                <tr>
-                  <th>Number</th>
-                  <th>Client</th>
-                  <th>Amount</th>
-                  <th>Due Date</th>
-                  <th>Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {recent.map((inv) => (
-                  <tr
-                    key={inv.id}
-                    onClick={() => (window.location.href = `/invoices/${inv.id}`)}
-                    style={{ cursor: 'pointer' }}
+        {/* Stat cards */}
+        <div className="stat-grid">
+          {stats.map((stat, i) => {
+            const Icon = stat.icon
+            return (
+              <div
+                key={stat.label}
+                className="stat-card"
+                style={{
+                  animationDelay: `${i * 0.08}s`,
+                  opacity: mounted ? undefined : 0,
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+                  <div
+                    style={{
+                      width: 36,
+                      height: 36,
+                      borderRadius: 10,
+                      background: stat.tone === 'danger' ? 'var(--danger-light)' : stat.tone === 'warning' ? 'var(--warning-light)' : stat.tone === 'success' ? 'var(--success-light)' : 'var(--accent-light)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: stat.tone === 'danger' ? 'var(--danger)' : stat.tone === 'warning' ? 'var(--warning)' : stat.tone === 'success' ? 'var(--success)' : 'var(--teal)',
+                    }}
                   >
-                    <td style={{ fontFamily: 'var(--mono)', fontSize: '0.82rem' }}>{inv.number}</td>
-                    <td>{clientMap[inv.clientId]?.name ?? '—'}</td>
-                    <td style={{ fontFamily: 'var(--mono)' }}>{formatCurrency(total(inv.lineItems, inv.taxRate))}</td>
-                    <td style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>{formatDate(inv.dueDate)}</td>
-                    <td><StatusBadge status={inv.status} /></td>
-                  </tr>
+                    <Icon size={18} strokeWidth={2} />
+                  </div>
+                </div>
+                <div className="stat-label">{stat.label}</div>
+                <div className={`stat-value ${stat.tone === 'danger' ? 'danger' : stat.tone === 'warning' ? 'warning' : stat.tone === 'success' ? 'success' : ''}`}>
+                  {stat.value}
+                </div>
+              </div>
+            )
+          })}
+        </div>
+
+        {/* Recurring invoices */}
+        {recurringDue.length > 0 && (
+          <div className="slide-up" style={{ marginBottom: 32 }}>
+            <div
+              className="card-header"
+              style={{
+                background: 'linear-gradient(135deg, var(--warning-light) 0%, #FEF9C3 100%)',
+                borderRadius: 'var(--radius) var(--radius) 0 0',
+                color: 'var(--warning)',
+              }}
+            >
+              <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <RefreshCw size={16} strokeWidth={2} />
+                Recurring invoices ready to send ({recurringDue.length})
+              </span>
+            </div>
+            <div className="card" style={{ borderRadius: '0 0 var(--radius) var(--radius)', borderTop: 'none' }}>
+              <div className="card-body" style={{ padding: '14px 18px' }}>
+                {recurringDue.map((inv) => (
+                  <div className="recurring-item" key={inv.id}>
+                    <div className="recurring-item-info">
+                      <div className="recurring-item-title">{clientMap[inv.clientId]?.name ?? 'Unknown client'}</div>
+                      <div className="recurring-item-sub">
+                        {inv.number} · {inv.recurringFrequency} · due {formatDate(inv.recurringNextDate!)}
+                      </div>
+                    </div>
+                    <button className="btn btn-primary btn-sm" onClick={() => generateRecurring(inv)}>
+                      Generate
+                    </button>
+                  </div>
                 ))}
-              </tbody>
-            </table>
-          )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Recent invoices */}
+        <div className="card slide-up">
+          <div className="card-header">
+            <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <FileText size={17} strokeWidth={2} />
+              Recent Invoices
+            </span>
+            <Link href="/invoices" style={{ fontSize: '0.82rem', fontWeight: 500, display: 'flex', alignItems: 'center', gap: 4 }}>
+              View all <ArrowRight size={14} />
+            </Link>
+          </div>
+          <div className="table-wrap">
+            {recent.length === 0 ? (
+              <div className="empty-state">
+                <div style={{
+                  width: 56,
+                  height: 56,
+                  borderRadius: 16,
+                  background: 'var(--accent-light)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  margin: '0 auto 16px',
+                  color: 'var(--teal)',
+                }}>
+                  <FileText size={24} strokeWidth={2} />
+                </div>
+                <div className="empty-state-title">No invoices yet</div>
+                <div className="empty-state-desc">Create your first invoice to get started.</div>
+                <Link href="/invoices/new" className="btn btn-primary">
+                  <Plus size={16} strokeWidth={2.5} />
+                  New Invoice
+                </Link>
+              </div>
+            ) : (
+              <table>
+                <thead>
+                  <tr>
+                    <th>Number</th>
+                    <th>Client</th>
+                    <th>Amount</th>
+                    <th>Due Date</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {recent.map((inv) => (
+                    <tr
+                      key={inv.id}
+                      onClick={() => (window.location.href = `/invoices/${inv.id}`)}
+                      style={{ cursor: 'pointer' }}
+                    >
+                      <td style={{ fontFamily: 'var(--mono)', fontSize: '0.82rem', fontWeight: 600 }}>{inv.number}</td>
+                      <td style={{ fontWeight: 500 }}>{clientMap[inv.clientId]?.name ?? '—'}</td>
+                      <td style={{ fontFamily: 'var(--mono)', fontWeight: 600 }}>{formatCurrency(total(inv.lineItems, inv.taxRate))}</td>
+                      <td style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>{formatDate(inv.dueDate)}</td>
+                      <td><StatusBadge status={inv.status} /></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
         </div>
       </div>
     </>

@@ -1,7 +1,9 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { Users, Plus, Trash2, Mail, Phone } from 'lucide-react'
 import { db, getSettings } from '@/lib/db'
+import { assertUnderLimit, DEMO_LIMITS } from '@/lib/limits'
 import type { Client } from '@/types'
 import { formatDate } from '@/lib/calc'
 
@@ -41,13 +43,18 @@ export default function ClientsPage() {
 
   async function save() {
     if (!form.name.trim()) return
-    if (modal === 'new') {
-      await db.clients.add({ ...form, createdAt: new Date() })
-    } else {
-      await db.clients.update(modal as number, form)
+    try {
+      if (modal === 'new') {
+        await assertUnderLimit('clients', DEMO_LIMITS.MAX_CLIENTS)
+        await db.clients.add({ ...form, createdAt: new Date() })
+      } else {
+        await db.clients.update(modal as number, form)
+      }
+      setModal(null)
+      load()
+    } catch (e) {
+      alert(e instanceof Error ? e.message : 'Could not save client.')
     }
-    setModal(null)
-    load()
   }
 
   async function remove(id: number) {
@@ -63,24 +70,42 @@ export default function ClientsPage() {
           <h1 className="page-title">Clients</h1>
           <p className="page-subtitle">{clients.length} client{clients.length !== 1 ? 's' : ''}</p>
         </div>
-        <button className="btn btn-primary" onClick={openNew}>+ New Client</button>
+        <button className="btn btn-primary" onClick={openNew}>
+          <Plus size={16} strokeWidth={2.5} />
+          New Client
+        </button>
       </div>
 
       <div className="card">
         <div className="table-wrap">
           {clients.length === 0 ? (
             <div className="empty-state">
+              <div style={{
+                width: 56,
+                height: 56,
+                borderRadius: 16,
+                background: 'var(--accent-light)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                margin: '0 auto 16px',
+                color: 'var(--teal)',
+              }}>
+                <Users size={24} strokeWidth={2} />
+              </div>
               <div className="empty-state-title">No clients yet</div>
               <div className="empty-state-desc">Add your first client to start creating invoices.</div>
-              <button className="btn btn-primary" onClick={openNew}>+ New Client</button>
+              <button className="btn btn-primary" onClick={openNew}>
+                <Plus size={16} strokeWidth={2.5} />
+                New Client
+              </button>
             </div>
           ) : (
             <table>
               <thead>
                 <tr>
                   <th>Name</th>
-                  <th>Email</th>
-                  <th>Phone</th>
+                  <th>Contact</th>
                   <th>Default Tax</th>
                   <th>Added</th>
                   <th></th>
@@ -89,9 +114,22 @@ export default function ClientsPage() {
               <tbody>
                 {clients.map((client) => (
                   <tr key={client.id} style={{ cursor: 'pointer' }} onClick={() => openEdit(client)}>
-                    <td style={{ fontWeight: 500 }}>{client.name}</td>
-                    <td style={{ color: 'var(--text-muted)' }}>{client.email || '—'}</td>
-                    <td style={{ color: 'var(--text-muted)' }}>{client.phone || '—'}</td>
+                    <td style={{ fontWeight: 600, color: 'var(--navy)' }}>{client.name}</td>
+                    <td>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                        {client.email && (
+                          <span style={{ color: 'var(--text-muted)', fontSize: '0.82rem', display: 'flex', alignItems: 'center', gap: 4 }}>
+                            <Mail size={12} /> {client.email}
+                          </span>
+                        )}
+                        {client.phone && (
+                          <span style={{ color: 'var(--text-muted)', fontSize: '0.82rem', display: 'flex', alignItems: 'center', gap: 4 }}>
+                            <Phone size={12} /> {client.phone}
+                          </span>
+                        )}
+                        {!client.email && !client.phone && <span style={{ color: 'var(--text-subtle)', fontSize: '0.82rem' }}>—</span>}
+                      </div>
+                    </td>
                     <td style={{ fontFamily: 'var(--mono)', fontSize: '0.85rem' }}>
                       {client.defaultTaxRate > 0 ? `${client.defaultTaxRate}%` : '—'}
                     </td>
@@ -100,8 +138,9 @@ export default function ClientsPage() {
                       <button
                         className="btn btn-ghost btn-sm"
                         onClick={(e) => { e.stopPropagation(); remove(client.id!) }}
+                        style={{ color: 'var(--text-subtle)' }}
                       >
-                        Delete
+                        <Trash2 size={14} />
                       </button>
                     </td>
                   </tr>
@@ -122,21 +161,21 @@ export default function ClientsPage() {
             <div className="modal-body">
               <div className="form-group">
                 <label className="form-label">Name *</label>
-                <input className="form-input" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} autoFocus />
+                <input className="form-input" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} autoFocus maxLength={80} />
               </div>
               <div className="form-row">
                 <div className="form-group">
                   <label className="form-label">Email</label>
-                  <input className="form-input" type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
+                  <input className="form-input" type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} maxLength={254} />
                 </div>
                 <div className="form-group">
                   <label className="form-label">Phone</label>
-                  <input className="form-input" type="tel" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
+                  <input className="form-input" type="tel" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} maxLength={20} />
                 </div>
               </div>
               <div className="form-group">
                 <label className="form-label">Address</label>
-                <textarea className="form-textarea" value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} rows={3} />
+                <textarea className="form-textarea" value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} rows={3} maxLength={500} />
               </div>
               <div className="form-group">
                 <label className="form-label">Default Tax Rate (%)</label>

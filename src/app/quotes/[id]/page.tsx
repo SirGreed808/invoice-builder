@@ -3,6 +3,14 @@
 import { use, useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import {
+  ArrowLeft,
+  Pencil,
+  Download,
+  Trash2,
+  FileText,
+  Plus,
+} from 'lucide-react'
 import { db, getSettings } from '@/lib/db'
 import type { Quote, Client, Settings, QuoteStatus } from '@/types'
 import StatusBadge from '@/components/StatusBadge'
@@ -65,50 +73,73 @@ export default function QuoteDetailPage({ params }: { params: Promise<{ id: stri
     <>
       <div className="page-header">
         <div>
-          <h1 className="page-title">{quote.number} <StatusBadge status={quote.status} /></h1>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 4 }}>
+            <Link href="/quotes" className="btn btn-ghost btn-sm" style={{ padding: '4px 8px' }}>
+              <ArrowLeft size={16} />
+            </Link>
+            <h1 className="page-title" style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <FileText size={22} strokeWidth={2} />
+              {quote.number}
+            </h1>
+            <StatusBadge status={quote.status} />
+          </div>
           <p className="page-subtitle">Created {formatDate(quote.createdAt)}</p>
         </div>
-        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-          <button className="btn btn-ghost" onClick={() => setEditing(true)}>Edit</button>
-          <button className="btn btn-ghost" onClick={downloadPDF}>Export PDF</button>
-          <Link href={`/invoices/new?fromQuote=${quote.id}`} className="btn btn-primary">Convert to Invoice</Link>
-          <button className="btn btn-danger" onClick={remove}>Delete</button>
+        <div className="detail-actions">
+          <button className="btn btn-ghost" onClick={() => setEditing(true)}>
+            <Pencil size={15} strokeWidth={2} />
+            Edit
+          </button>
+          <button className="btn btn-ghost" onClick={downloadPDF}>
+            <Download size={15} strokeWidth={2} />
+            Export PDF
+          </button>
+          <Link href={`/invoices/new?fromQuote=${quote.id}`} className="btn btn-primary">
+            <Plus size={15} strokeWidth={2.5} />
+            Convert to Invoice
+          </Link>
+          <button className="btn btn-danger" onClick={remove}>
+            <Trash2 size={15} strokeWidth={2} />
+            Delete
+          </button>
         </div>
       </div>
 
-      <div className="card" style={{ marginBottom: 16 }}>
+      <div className="card" style={{ marginBottom: 18 }}>
         <div className="card-header">Status</div>
-        <div className="card-body" style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-          {(['draft', 'sent', 'accepted', 'declined'] as const).map((s) => (
-            <button
-              key={s}
-              className={`btn btn-sm ${quote.status === s ? 'btn-primary' : 'btn-ghost'}`}
-              onClick={() => setStatus(s)}
-              style={{ textTransform: 'capitalize' }}
-            >
-              {s}
-            </button>
-          ))}
+        <div className="card-body">
+          <div className="status-buttons">
+            {(['draft', 'sent', 'accepted', 'declined'] as const).map((s) => (
+              <button
+                key={s}
+                className={`btn btn-sm ${quote.status === s ? 'btn-primary' : 'btn-ghost'}`}
+                onClick={() => setStatus(s)}
+                style={{ textTransform: 'capitalize' }}
+              >
+                {s}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
-      <div className="card" style={{ marginBottom: 16 }}>
+      <div className="card" style={{ marginBottom: 18 }}>
         <div className="card-header">Quote For</div>
         <div className="card-body">
           {client ? (
-            <>
-              <div style={{ fontWeight: 500, fontSize: '1rem' }}>{client.name}</div>
-              {client.email && <div style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>{client.email}</div>}
-              {client.phone && <div style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>{client.phone}</div>}
-              {client.address && <div style={{ color: 'var(--text-muted)', fontSize: '0.875rem', marginTop: 4, whiteSpace: 'pre-line' }}>{client.address}</div>}
-            </>
+            <div style={{ display: 'grid', gap: 4 }}>
+              <div style={{ fontWeight: 700, fontSize: '1.05rem', color: 'var(--navy)' }}>{client.name}</div>
+              {client.email && <div style={{ color: 'var(--text-muted)', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: 6 }}>📧 {client.email}</div>}
+              {client.phone && <div style={{ color: 'var(--text-muted)', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: 6 }}>📞 {client.phone}</div>}
+              {client.address && <div style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginTop: 4, whiteSpace: 'pre-line' }}>{client.address}</div>}
+            </div>
           ) : (
             <span style={{ color: 'var(--text-muted)' }}>Client not found</span>
           )}
         </div>
       </div>
 
-      <div className="card" style={{ marginBottom: 16 }}>
+      <div className="card" style={{ marginBottom: 18 }}>
         <div className="card-header">Line Items</div>
         <div className="card-body">
           <table className="line-items-table">
@@ -160,7 +191,7 @@ export default function QuoteDetailPage({ params }: { params: Promise<{ id: stri
       {quote.notes && (
         <div className="card">
           <div className="card-header">Notes</div>
-          <div className="card-body" style={{ whiteSpace: 'pre-line', color: 'var(--text-muted)' }}>{quote.notes}</div>
+          <div className="card-body" style={{ whiteSpace: 'pre-line', color: 'var(--text-muted)', lineHeight: 1.7 }}>{quote.notes}</div>
         </div>
       )}
     </>

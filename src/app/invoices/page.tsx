@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import { Plus, FileText, ArrowRight } from 'lucide-react'
 import { db } from '@/lib/db'
 import type { Invoice, Client } from '@/types'
 import StatusBadge from '@/components/StatusBadge'
@@ -11,8 +12,10 @@ export default function InvoicesPage() {
   const [invoices, setInvoices] = useState<Invoice[]>([])
   const [clients, setClients] = useState<Client[]>([])
   const [filter, setFilter] = useState<'all' | Invoice['status']>('all')
+  const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
+    setMounted(true)
     async function load() {
       const [invs, cls] = await Promise.all([db.invoices.toArray(), db.clients.toArray()])
       setInvoices(invs.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()))
@@ -39,10 +42,13 @@ export default function InvoicesPage() {
           <h1 className="page-title">Invoices</h1>
           <p className="page-subtitle">{invoices.length} total</p>
         </div>
-        <Link href="/invoices/new" className="btn btn-primary">+ New Invoice</Link>
+        <Link href="/invoices/new" className="btn btn-primary">
+          <Plus size={16} strokeWidth={2.5} />
+          New Invoice
+        </Link>
       </div>
 
-      <div style={{ display: 'flex', gap: 8, marginBottom: 16, flexWrap: 'wrap' }}>
+      <div className="filter-tabs">
         {(['all', 'draft', 'sent', 'paid', 'overdue'] as const).map((status) => (
           <button
             key={status}
@@ -59,11 +65,29 @@ export default function InvoicesPage() {
         <div className="table-wrap">
           {filtered.length === 0 ? (
             <div className="empty-state">
-              <div className="empty-state-title">No invoices {filter !== 'all' ? `with status "${filter}"` : 'yet'}</div>
+              <div style={{
+                width: 56,
+                height: 56,
+                borderRadius: 16,
+                background: 'var(--accent-light)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                margin: '0 auto 16px',
+                color: 'var(--teal)',
+              }}>
+                <FileText size={24} strokeWidth={2} />
+              </div>
+              <div className="empty-state-title">
+                No invoices {filter !== 'all' ? `with status "${filter}"` : 'yet'}
+              </div>
               {filter === 'all' && (
                 <>
                   <div className="empty-state-desc">Create your first invoice to get started.</div>
-                  <Link href="/invoices/new" className="btn btn-primary">+ New Invoice</Link>
+                  <Link href="/invoices/new" className="btn btn-primary">
+                    <Plus size={16} strokeWidth={2.5} />
+                    New Invoice
+                  </Link>
                 </>
               )}
             </div>
@@ -83,14 +107,18 @@ export default function InvoicesPage() {
               <tbody>
                 {filtered.map((inv) => (
                   <tr key={inv.id} onClick={() => (window.location.href = `/invoices/${inv.id}`)} style={{ cursor: 'pointer' }}>
-                    <td style={{ fontFamily: 'var(--mono)', fontSize: '0.82rem' }}>{inv.number}</td>
-                    <td>{clientMap[inv.clientId]?.name ?? '—'}</td>
+                    <td style={{ fontFamily: 'var(--mono)', fontSize: '0.82rem', fontWeight: 600 }}>{inv.number}</td>
+                    <td style={{ fontWeight: 500 }}>{clientMap[inv.clientId]?.name ?? '—'}</td>
                     <td style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>{formatDate(inv.createdAt)}</td>
                     <td style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>{formatDate(inv.dueDate)}</td>
-                    <td style={{ fontFamily: 'var(--mono)' }}>{formatCurrency(total(inv.lineItems, inv.taxRate))}</td>
+                    <td style={{ fontFamily: 'var(--mono)', fontWeight: 600 }}>{formatCurrency(total(inv.lineItems, inv.taxRate))}</td>
                     <td><StatusBadge status={inv.status} /></td>
                     <td style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>
-                      {inv.recurringFrequency ? `🔁 ${inv.recurringFrequency}` : '—'}
+                      {inv.recurringFrequency ? (
+                        <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                          <span style={{ fontSize: '0.9rem' }}>↻</span> {inv.recurringFrequency}
+                        </span>
+                      ) : '—'}
                     </td>
                   </tr>
                 ))}

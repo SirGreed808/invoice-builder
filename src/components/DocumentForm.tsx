@@ -3,7 +3,9 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { Save, ArrowLeft, Plus } from 'lucide-react'
 import { db, getSettings, nextInvoiceNumber, nextQuoteNumber } from '@/lib/db'
+import { assertUnderLimit, DEMO_LIMITS } from '@/lib/limits'
 import type { Client, Invoice, Quote, LineItem, RecurringFrequency } from '@/types'
 import LineItemEditor from './LineItemEditor'
 import { nextRecurringDate } from '@/lib/recurring'
@@ -63,8 +65,10 @@ export default function DocumentForm({ type, initial, initialClientId, initialFr
     }
     setSaving(true)
     try {
+      if (!initial?.id) {
+        await assertUnderLimit(type === 'invoice' ? 'invoices' : 'quotes', type === 'invoice' ? DEMO_LIMITS.MAX_INVOICES : DEMO_LIMITS.MAX_QUOTES)
+      }
       if (initial?.id) {
-        // update
         if (type === 'invoice') {
           const data: Partial<Invoice> = {
             clientId: Number(clientId),
@@ -83,7 +87,6 @@ export default function DocumentForm({ type, initial, initialClientId, initialFr
         }
         if (closeAfter) router.push(`/${type}s/${initial.id}`)
       } else {
-        // create
         if (type === 'invoice') {
           const number = await nextInvoiceNumber()
           const data: Invoice = {
@@ -120,6 +123,8 @@ export default function DocumentForm({ type, initial, initialClientId, initialFr
           router.push(`/quotes/${id}`)
         }
       }
+    } catch (e) {
+      alert(e instanceof Error ? e.message : 'Could not save.')
     } finally {
       setSaving(false)
     }
@@ -129,20 +134,29 @@ export default function DocumentForm({ type, initial, initialClientId, initialFr
     <>
       <div className="page-header">
         <div>
-          <h1 className="page-title">
-            {initial ? `Edit ${type}` : `New ${type}`}
-            {initialFromQuote && ` (from ${initialFromQuote.number})`}
-          </h1>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 4 }}>
+            <Link href={`/${type}s`} className="btn btn-ghost btn-sm" style={{ padding: '4px 8px' }}>
+              <ArrowLeft size={16} />
+            </Link>
+            <h1 className="page-title">
+              {initial ? `Edit ${type}` : `New ${type}`}
+              {initialFromQuote && ` (from ${initialFromQuote.number})`}
+            </h1>
+          </div>
         </div>
-        <div style={{ display: 'flex', gap: 8 }}>
-          <Link href={`/${type}s`} className="btn btn-ghost">Cancel</Link>
+        <div style={{ display: 'flex', gap: 10 }}>
+          <Link href={`/${type}s`} className="btn btn-ghost">
+            <ArrowLeft size={15} strokeWidth={2} />
+            Cancel
+          </Link>
           <button className="btn btn-primary" onClick={() => save()} disabled={saving}>
+            <Save size={15} strokeWidth={2} />
             {saving ? 'Saving…' : 'Save'}
           </button>
         </div>
       </div>
 
-      <div className="card" style={{ marginBottom: 16 }}>
+      <div className="card" style={{ marginBottom: 18 }}>
         <div className="card-body">
           <div className="form-row">
             <div className="form-group">
@@ -154,8 +168,8 @@ export default function DocumentForm({ type, initial, initialClientId, initialFr
                 ))}
               </select>
               {clients.length === 0 && (
-                <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: 4 }}>
-                  No clients yet — <Link href="/clients">add one</Link>.
+                <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', marginTop: 6 }}>
+                  No clients yet — <Link href="/clients" style={{ fontWeight: 600 }}>add one</Link>.
                 </p>
               )}
             </div>
@@ -175,22 +189,22 @@ export default function DocumentForm({ type, initial, initialClientId, initialFr
         </div>
       </div>
 
-      <div className="card" style={{ marginBottom: 16 }}>
+      <div className="card" style={{ marginBottom: 18 }}>
         <div className="card-header">Line Items</div>
         <div className="card-body">
           <LineItemEditor items={lineItems} taxRate={taxRate} onChange={setLineItems} />
         </div>
       </div>
 
-      <div className="card" style={{ marginBottom: 16 }}>
+      <div className="card" style={{ marginBottom: 18 }}>
         <div className="card-header">Notes</div>
         <div className="card-body">
-          <textarea className="form-textarea" value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Payment terms, thank-you note, anything else…" rows={4} />
+          <textarea className="form-textarea" value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Payment terms, thank-you note, anything else…" rows={4} maxLength={2000} />
         </div>
       </div>
 
       {type === 'invoice' && (
-        <div className="card" style={{ marginBottom: 16 }}>
+        <div className="card" style={{ marginBottom: 18 }}>
           <div className="card-header">Recurring (optional)</div>
           <div className="card-body">
             <div className="form-row">
@@ -212,7 +226,7 @@ export default function DocumentForm({ type, initial, initialClientId, initialFr
               )}
             </div>
             {recurring && (
-              <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+              <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', marginTop: 4 }}>
                 A new draft invoice will appear in your inbox each {recurring.replace('ly', '')} starting after the due date.
               </p>
             )}
